@@ -1,0 +1,23 @@
+version: 1
+name: baseline_single_layer
+geometry_file: ../geometry/baseline_block.json
+materials_file: ../../materials.json
+description: Baseline geopolymer block with single insulation layer and heater ramp to 600C.
+mesh:
+  global_size_mm: 7.5
+  rod_refinement_mm: 2.0
+heater:
+  name: central_rod
+  max_temperature_c: 600
+  ramp_minutes: 45
+boundaries:
+  - region: outer_shell
+    type: convection
+    value: 25
+    h_coeff: 5.0
+  - region: exposed_face
+    type: radiation
+    value: 25
+    h_coeff: 0.9
+total_time_s: 28800
+dt_s: 20

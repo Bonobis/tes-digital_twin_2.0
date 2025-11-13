@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thermal-twin"
+version = "0.1.0"
+description = "FEM heat diffusion digital twin for TES experiments"
+readme = "README.md"
+authors = [{name = "Bonobis"}]
+requires-python = ">=3.10"
+dependencies = [
+    "fipy>=3.5.0",
+    "gmsh>=4.12.0",
+    "meshio>=5.3.0",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+    "plotly>=5.22",
+    "dash>=2.16",
+    "dash-mantine-components>=1.2.0",
+    "pyvista>=0.43.0",
+    "typer>=0.12.3",
+    "rich>=13.7"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pre-commit"]
+
+[project.scripts]
+thermal-twin = "thermal_twin.cli:app_entry"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
