@@ -19,7 +19,7 @@ console = Console()
 def show_config(path: Path) -> None:
     """Display a parsed scenario configuration."""
     config = ScenarioConfig.from_file(path)
-    console.print_json(data=config.model_dump())
+    console.print_json(data=config.model_dump(mode="json"))
 
 
 @app.command()

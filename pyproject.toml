@@ -24,7 +24,8 @@ dependencies = [
     "dash-mantine-components>=1.2.0",
     "pyvista>=0.43.0",
     "typer>=0.12.3",
-    "rich>=13.7"
+    "rich>=13.7",
+    "packaging>=24.0"
 ]
 
 [project.optional-dependencies]

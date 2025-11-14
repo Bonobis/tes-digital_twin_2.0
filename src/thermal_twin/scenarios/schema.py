@@ -7,6 +7,10 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
+def _default_mesh_controls() -> "MeshControls":
+    return MeshControls()  # pyright: ignore[reportCallIssue]
+
+
 class MeshControls(BaseModel):
     global_size_mm: float = Field(5.0, ge=0.1)
     rod_refinement_mm: Optional[float] = Field(None, ge=0.05)
@@ -31,7 +35,7 @@ class ScenarioConfig(BaseModel):
     description: str | None = None
     geometry_file: Path
     materials_file: Path = Path("materials.json")
-    mesh: MeshControls = MeshControls()
+    mesh: MeshControls = Field(default_factory=_default_mesh_controls)
     heater: HeaterSchedule
     boundaries: list[BoundaryCondition] = Field(default_factory=list)
     total_time_s: float = 7200.0

@@ -1,3 +1,3 @@
-from .builder import MeshBuilder
+from .builder import MeshBuilder, MeshResult
 
-__all__ = ["MeshBuilder"]
+__all__ = ["MeshBuilder", "MeshResult"]

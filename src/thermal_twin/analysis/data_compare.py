@@ -16,5 +16,9 @@ class DataComparator:
         return pd.read_excel(self.filepath)
 
     def rmse(self, df_sim: pd.DataFrame, df_exp: pd.DataFrame) -> float:
-        diff = df_sim.set_index("time").subtract(df_exp.set_index("time"))
-        return float((diff.pow(2).mean().mean()) ** 0.5)
+        sim_aligned = df_sim.set_index("time")
+        exp_aligned = df_exp.set_index("time")
+        diff = sim_aligned.subtract(exp_aligned)
+        squared = diff.pow(2.0)
+        mse = float(squared.to_numpy().mean())
+        return mse ** 0.5
