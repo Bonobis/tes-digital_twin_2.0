@@ -40,6 +40,7 @@ class ScenarioRunner:
                 "volume_groups": mesh_result.volume_groups,
                 "surface_groups": mesh_result.surface_groups,
                 "element_groups": mesh_result.element_groups,
+                "mesh_quality": mesh_result.quality,
             }
         )
         return result

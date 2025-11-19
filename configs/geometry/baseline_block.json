@@ -7,8 +7,16 @@
       "type": "block",
       "name": "geopolymer_core",
       "params": {
-        "size": [10, 10, 25],
-        "origin": [-5, -5, 0],
+        "size": [
+          10,
+          10,
+          25
+        ],
+        "origin": [
+          -5,
+          -5,
+          0
+        ],
         "material": "dias_geopolymer"
       }
     },
@@ -18,7 +26,11 @@
       "params": {
         "radius": 0.8,
         "height": 25,
-        "center": [0, 0, 12.5],
+        "center": [
+          0,
+          0,
+          12.5
+        ],
         "axis": "z",
         "material": "nichrome",
         "role": "heater"
@@ -31,7 +43,15 @@
         "target": "geopolymer_core",
         "thickness": 1.3,
         "material": "silica_blanket",
-        "apply_faces": ["+x", "-x", "+y", "-y", "+z", "-z"]
+        "apply_faces": [
+          "+x",
+          "-x",
+          "+y",
+          "-y",
+          "+z",
+          "-z"
+        ],
+        "gap": 0.0
       }
     }
   ]

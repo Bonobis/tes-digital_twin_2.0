@@ -7,7 +7,7 @@ mesh:
   global_size_mm: 7.5
   rod_refinement_mm: 2.0
 heater:
-  name: central_rod
+  name: heater_rod
   max_temperature_c: 600
   ramp_minutes: 45
 boundaries:

@@ -63,6 +63,7 @@ class HeatSolver:
         self.catalog = catalog
         self.scenario = scenario
         self.settings = settings
+        self.mesh_degenerate_faces = 0
         self.element_materials = {
             element.name: element.material
             for element in geometry.elements
@@ -86,9 +87,9 @@ class HeatSolver:
 
         self._anchor_cell(temperature)
 
-        rho_cp_var = CellVariable(mesh=mesh, name="rho_cp", value=material_fields["rho_cp"])
-        conductivity_var = CellVariable(mesh=mesh, name="conductivity", value=material_fields["k"])
-        equation = TransientTerm(coeff=rho_cp_var) == DiffusionTerm(coeff=conductivity_var)
+        rho_cp_var = CellVariable(mesh=mesh, name="rho_cp", value=material_fields["rho_cp"])  # type: ignore[arg-type]
+        conductivity_var = CellVariable(mesh=mesh, name="conductivity", value=material_fields["k"])  # type: ignore[arg-type]
+        equation = TransientTerm(coeff=rho_cp_var) == DiffusionTerm(coeff=conductivity_var)  # type: ignore[arg-type]
 
         total_time = self.settings.total_time_s
         dt = self.settings.dt
@@ -117,6 +118,7 @@ class HeatSolver:
             "heater_target_c": self.scenario.heater.max_temperature_c,
             "ambient_c": self.ambient_temp,
             "boundaries": boundary_log,
+            "mesh_zero_distance_faces": self.mesh_degenerate_faces,
         }
         return result
 
@@ -125,7 +127,19 @@ class HeatSolver:
 
     def _load_fipy_mesh(self) -> Gmsh3D:
         _ensure_gmsh_version()
-        return Gmsh3D(str(self.mesh_result.mesh_path))
+        mesh = Gmsh3D(str(self.mesh_result.mesh_path))
+        self._regularize_mesh(mesh)
+        return mesh
+
+    def _regularize_mesh(self, mesh: Gmsh3D) -> None:
+        distances = np.array(mesh._cellDistances, copy=True)
+        zero_mask = np.isclose(distances, 0.0)
+        count = int(zero_mask.sum())
+        if count:
+            distances[zero_mask] = 1e-12
+            mesh._cellDistances = distances
+        self.mesh_degenerate_faces = count
+
 
     def _infer_ambient_temperature(self) -> float:
         if self.scenario.boundaries:

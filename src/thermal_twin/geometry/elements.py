@@ -160,6 +160,14 @@ class BuildContext:
             raise KeyError(f"Element '{name}' has no recorded bounding box")
         return self.bounding_boxes[name]
 
+    def rebuild_material_map(self) -> None:
+        self.volumes_by_material.clear()
+        for record in self.elements.values():
+            if record.material:
+                self.volumes_by_material.setdefault(record.material, [])
+                self.volumes_by_material[record.material].extend(
+                    tag for dim, tag in record.dimtags if dim == 3
+                )
 
 def _vector(params: dict[str, Any], key: str, fallback: Optional[Iterable[float]] = None) -> List[float]:
     value = params.get(key)
@@ -281,20 +289,18 @@ def _build_shell(element: GeometryElement, ctx: BuildContext) -> List[Tuple[int,
     if not target_name:
         raise ValueError("Shell element requires 'target' parameter")
     thickness = float(params["thickness"])
+    gap = float(params.get("gap", 0.0))
+    if gap < 0:
+        raise ValueError("Shell gap must be non-negative")
     faces = params.get("apply_faces")
     target_bbox = ctx.get_bbox(target_name)
-    outer_bbox = target_bbox.expand(thickness, faces)
+    outer_bbox = target_bbox.expand(thickness + gap, faces)
     outer_origin_m = _scale_tuple(outer_bbox.origin, ctx.unit_scale)
     outer_size_m = _scale_tuple(outer_bbox.size, ctx.unit_scale)
-    inner_origin_m = _scale_tuple(target_bbox.origin, ctx.unit_scale)
-    inner_size_m = _scale_tuple(target_bbox.size, ctx.unit_scale)
     outer_tag = gmsh.model.occ.addBox(*outer_origin_m, *outer_size_m)
-    inner_tag = gmsh.model.occ.addBox(*inner_origin_m, *inner_size_m)
-    result, _ = gmsh.model.occ.cut([(3, outer_tag)], [(3, inner_tag)], removeObject=True, removeTool=True)
-    if not result:
-        raise RuntimeError("Shell boolean operation failed")
-    ctx.register_element(element, result, bbox=outer_bbox)
-    return result
+    dimtags = [(3, outer_tag)]
+    ctx.register_element(element, dimtags, bbox=outer_bbox)
+    return dimtags
 
 
 def _ensure_vec3(values: Iterable[float]) -> Vec3:
