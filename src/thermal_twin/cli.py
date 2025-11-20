@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Callable, Dict
-from collections import defaultdict
 
 import meshio
 import typer
@@ -47,14 +47,10 @@ def _file_sink(handle) -> Callable[[Dict[str, Any]], None]:
     return _sink
 
 
-
-
-
 def _probe_plot_sink():
     try:
         import matplotlib.pyplot as plt
     except ImportError as exc:
-        import typer
         raise typer.BadParameter("Matplotlib is required for --live-plot; install matplotlib first.") from exc
     plt.ion()
     fig, ax = plt.subplots()
@@ -92,6 +88,7 @@ def _probe_plot_sink():
 
     return _sink, _close
 
+
 def _progress_sink(progress: Progress, task_id: TaskID) -> Callable[[Dict[str, Any]], None]:
     def _sink(event: Dict[str, Any]) -> None:
         event_type = event.get("event")
@@ -124,6 +121,7 @@ def simulate(
     telemetry_log: Path | None = typer.Option(None, help="Write streamed telemetry (NDJSON) to this path."),
     show_progress: bool = typer.Option(True, "--progress/--no-progress", help="Display a live progress bar."),
     live_plot: bool = typer.Option(False, "--live-plot/--no-live-plot", help="Show a live probe temperature plot (requires matplotlib)."),
+    live_plot_autoclose: bool = typer.Option(False, "--live-plot-autoclose/--keep-live-plot-open", help="Auto-close the live plot when the simulation ends (default: keep it open)."),
 ) -> None:
     """Run a simulation defined by a scenario YAML."""
     config = ScenarioConfig.from_file(path)
@@ -146,7 +144,8 @@ def simulate(
         if live_plot:
             plot_sink, plot_close = _probe_plot_sink()
             sinks.append(plot_sink)
-            stack.callback(plot_close)
+            if live_plot_autoclose:
+                stack.callback(plot_close)
         telemetry_cb = _build_dispatcher(sinks)
         runner = ScenarioRunner(config, telemetry=telemetry_cb)
         result = runner.run()
@@ -202,5 +201,3 @@ def app_entry() -> None:  # pragma: no cover
 
 if __name__ == "__main__":  # pragma: no cover
     app_entry()
-
-
