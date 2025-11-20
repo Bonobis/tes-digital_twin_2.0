@@ -24,9 +24,12 @@ measurements:
     position: [0, 3, 12.5]
     units: cm
   - name: Ch2_surface
-    position: [0, 5, 12.5]
+    position: [0, 4.9, 12.5]
     units: cm
-total_time_s: 2000
+  - name: Ch3_near_heater
+    position: [0, 0.5, 12.5]
+    units: cm
+total_time_s: 5000
 dt_s: 20
 
 
