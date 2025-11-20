@@ -94,7 +94,7 @@ class HeatSolver:
         boundary_log = self._apply_boundary_constraints(mesh, temperature)
         heater_ctx = self._build_heater_context(mesh)
         if heater_ctx.mask is not None:
-            temperature.setValue(heater_ctx.temperature(0.0), where=heater_ctx.mask)
+            temperature.constrain(heater_ctx.temperature(0.0), where=heater_ctx.mask)
 
         self._anchor_cell(temperature)
 
@@ -123,7 +123,8 @@ class HeatSolver:
         while time < total_time - 1e-9:
             current_dt = min(dt, total_time - time)
             if heater_ctx.mask is not None:
-                temperature.setValue(heater_ctx.temperature(time), where=heater_ctx.mask)
+                heater_temp = heater_ctx.temperature(time)
+                temperature.constrain(heater_temp, where=heater_ctx.mask)
             equation.solve(var=temperature, dt=current_dt)
             temperature.updateOld()
             time += current_dt
@@ -331,3 +332,4 @@ def _ensure_gmsh_version() -> None:
     version = gmshMesh._gmshVersion()
     if version < Version("2.0"):
         gmshMesh._gmshVersion = lambda communicator=None: Version("4.0")
+
