@@ -26,7 +26,7 @@ measurements:
   - name: Ch2_surface
     position: [0, 5, 12.5]
     units: cm
-total_time_s: 28800
+total_time_s: 2000
 dt_s: 20
 
 

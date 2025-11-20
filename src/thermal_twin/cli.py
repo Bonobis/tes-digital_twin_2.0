@@ -5,6 +5,7 @@ import json
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Callable, Dict
+from collections import defaultdict
 
 import meshio
 import typer
@@ -46,6 +47,46 @@ def _file_sink(handle) -> Callable[[Dict[str, Any]], None]:
     return _sink
 
 
+
+
+def _probe_plot_sink():
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        import typer
+        raise typer.BadParameter("Matplotlib is required for --live-plot; install matplotlib first.") from exc
+    plt.ion()
+    fig, ax = plt.subplots()
+    data: dict[str, tuple[list[float], list[float]]] = defaultdict(lambda: ([], []))
+
+    def _redraw() -> None:
+        ax.clear()
+        for name, (ts, vals) in data.items():
+            ax.plot(ts, vals, label=name)
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("temperature (degC)")
+        if data:
+            ax.legend(loc="best")
+        ax.grid(True)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+
+    def _sink(event: Dict[str, Any]) -> None:
+        if event.get("event") != "step":
+            return
+        t = event.get("time")
+        probes = event.get("probes") or {}
+        if t is None or not probes:
+            return
+        for name, temp in probes.items():
+            ts, vals = data[name]
+            ts.append(float(t))
+            vals.append(float(temp))
+        _redraw()
+        plt.pause(0.001)
+
+    return _sink, fig
+
 def _progress_sink(progress: Progress, task_id: TaskID) -> Callable[[Dict[str, Any]], None]:
     def _sink(event: Dict[str, Any]) -> None:
         event_type = event.get("event")
@@ -77,6 +118,7 @@ def simulate(
     output: Path | None = typer.Option(None, help="Optional JSON file to store the final summary."),
     telemetry_log: Path | None = typer.Option(None, help="Write streamed telemetry (NDJSON) to this path."),
     show_progress: bool = typer.Option(True, "--progress/--no-progress", help="Display a live progress bar."),
+    live_plot: bool = typer.Option(False, "--live-plot/--no-live-plot", help="Show a live probe temperature plot (requires matplotlib)."),
 ) -> None:
     """Run a simulation defined by a scenario YAML."""
     config = ScenarioConfig.from_file(path)
@@ -96,6 +138,10 @@ def simulate(
             )
             task_id = progress.add_task("Simulating", total=1.0)
             sinks.append(_progress_sink(progress, task_id))
+        if live_plot:
+            plot_sink, fig = _probe_plot_sink()
+            sinks.append(plot_sink)
+            stack.callback(fig.close)
         telemetry_cb = _build_dispatcher(sinks)
         runner = ScenarioRunner(config, telemetry=telemetry_cb)
         result = runner.run()
