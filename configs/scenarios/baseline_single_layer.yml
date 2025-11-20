@@ -9,7 +9,7 @@ mesh:
 heater:
   name: heater_rod
   max_temperature_c: 600
-  ramp_minutes: 45
+  ramp_minutes: 5
 boundaries:
   - region: outer_shell
     type: convection
