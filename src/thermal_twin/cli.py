@@ -49,6 +49,7 @@ def _file_sink(handle) -> Callable[[Dict[str, Any]], None]:
 
 
 
+
 def _probe_plot_sink():
     try:
         import matplotlib.pyplot as plt
@@ -85,7 +86,11 @@ def _probe_plot_sink():
         _redraw()
         plt.pause(0.001)
 
-        def _close() -> None:\n        import matplotlib.pyplot as plt\n        plt.close(fig)\n\n    return _sink, _close
+    def _close() -> None:
+        import matplotlib.pyplot as plt
+        plt.close(fig)
+
+    return _sink, _close
 
 def _progress_sink(progress: Progress, task_id: TaskID) -> Callable[[Dict[str, Any]], None]:
     def _sink(event: Dict[str, Any]) -> None:
