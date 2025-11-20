@@ -12,6 +12,7 @@ import meshio
 from ..geometry import (
     BuildContext,
     ElementRecord,
+    GeometryElement,
     GeometrySpec,
     _collect_points_from_dimtags,
 )

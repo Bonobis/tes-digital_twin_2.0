@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence
 
 import numpy as np
 from packaging.version import Version
@@ -47,6 +47,12 @@ class HeaterContext:
         return self.max_temp * min(1.0, max(0.0, time_s / self.ramp_seconds))
 
 
+@dataclass
+class ProbeDefinition:
+    name: str
+    position: tuple[float, float, float]
+
+
 class HeatSolver:
     """Wraps FiPy operations for the digital twin."""
 
@@ -57,12 +63,16 @@ class HeatSolver:
         catalog: MaterialCatalog,
         scenario: ScenarioConfig,
         settings: SolverSettings,
+        probes: Sequence[ProbeDefinition] | None = None,
+        telemetry: Callable[[Dict[str, Any]], None] | None = None,
     ):
         self.mesh_result = mesh
         self.geometry = geometry
         self.catalog = catalog
         self.scenario = scenario
         self.settings = settings
+        self.probes = list(probes or [])
+        self.telemetry = telemetry
         self.mesh_degenerate_faces = 0
         self.element_materials = {
             element.name: element.material
@@ -70,6 +80,7 @@ class HeatSolver:
             if element.material
         }
         self.ambient_temp = self._infer_ambient_temperature()
+        self._probe_cells: list[int] = []
 
     def run(self) -> dict[str, Any]:
         mesh = self._load_fipy_mesh()
@@ -96,6 +107,18 @@ class HeatSolver:
         time = 0.0
         steps = 0
         temperature.updateOld()
+        self._emit_telemetry(
+            {
+                "event": "start",
+                "total_time": total_time,
+                "dt": dt,
+                "cells": mesh.numberOfCells,
+                "probes": [
+                    {"name": probe.name, "position_m": probe.position}
+                    for probe in self.probes
+                ],
+            }
+        )
 
         while time < total_time - 1e-9:
             current_dt = min(dt, total_time - time)
@@ -105,8 +128,20 @@ class HeatSolver:
             temperature.updateOld()
             time += current_dt
             steps += 1
+            self._emit_telemetry(
+                {
+                    "event": "step",
+                    "step": steps,
+                    "time": time,
+                    "dt": current_dt,
+                    "progress": min(1.0, time / total_time) if total_time else 1.0,
+                    "heater_temp": heater_ctx.temperature(time),
+                    "probes": self._collect_probe_values_from_variable(temperature),
+                }
+            )
 
         values = np.array(temperature.value)
+        probe_final = self._collect_probe_values(values)
         result: Dict[str, Any] = {
             "steps": steps,
             "dt": self.settings.dt,
@@ -119,7 +154,12 @@ class HeatSolver:
             "ambient_c": self.ambient_temp,
             "boundaries": boundary_log,
             "mesh_zero_distance_faces": self.mesh_degenerate_faces,
+            "probe_final_temperatures": probe_final,
+            "probe_definitions": [
+                {"name": probe.name, "position_m": probe.position} for probe in self.probes
+            ],
         }
+        self._emit_telemetry({"event": "finish", "result": result})
         return result
 
     # ------------------------------------------------------------------
@@ -129,6 +169,7 @@ class HeatSolver:
         _ensure_gmsh_version()
         mesh = Gmsh3D(str(self.mesh_result.mesh_path))
         self._regularize_mesh(mesh)
+        self._assign_probes(mesh)
         return mesh
 
     def _regularize_mesh(self, mesh: Gmsh3D) -> None:
@@ -249,6 +290,40 @@ class HeatSolver:
         if var is None:
             return None
         return np.array(var.value, dtype=bool)
+
+
+    def _collect_probe_values_from_variable(self, temperature: CellVariable) -> Dict[str, float]:
+        if not self.probes or not self._probe_cells:
+            return {}
+        values = np.asarray(temperature.value)
+        return self._collect_probe_values(values)
+
+    def _collect_probe_values(self, values: np.ndarray) -> Dict[str, float]:
+        if not self.probes or not self._probe_cells:
+            return {}
+        data: Dict[str, float] = {}
+        for probe, idx in zip(self.probes, self._probe_cells):
+            data[probe.name] = float(values[idx])
+        return data
+
+    def _assign_probes(self, mesh: Gmsh3D) -> None:
+        if not self.probes:
+            self._probe_cells = []
+            return
+        centers = np.array(mesh.cellCenters.value.T)
+        if centers.size == 0:
+            self._probe_cells = []
+            return
+        self._probe_cells = []
+        for probe in self.probes:
+            target = np.array(probe.position)
+            distances = np.sum((centers - target) ** 2, axis=1)
+            idx = int(distances.argmin())
+            self._probe_cells.append(idx)
+
+    def _emit_telemetry(self, payload: Dict[str, Any]) -> None:
+        if self.telemetry is not None:
+            self.telemetry(payload)
 
 
 def _ensure_gmsh_version() -> None:

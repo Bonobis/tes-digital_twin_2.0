@@ -29,6 +29,12 @@ class BoundaryCondition(BaseModel):
     h_coeff: Optional[float] = None
 
 
+class MeasurementProbe(BaseModel):
+    name: str
+    position: tuple[float, float, float]
+    units: str | None = None
+
+
 class ScenarioConfig(BaseModel):
     version: int = 1
     name: str
@@ -38,6 +44,7 @@ class ScenarioConfig(BaseModel):
     mesh: MeshControls = Field(default_factory=_default_mesh_controls)
     heater: HeaterSchedule
     boundaries: list[BoundaryCondition] = Field(default_factory=list)
+    measurements: list[MeasurementProbe] = Field(default_factory=list)
     total_time_s: float = 7200.0
     dt_s: float = 20.0
 

@@ -1,3 +1,3 @@
-from .core import HeatSolver, SolverSettings
+from .core import HeatSolver, ProbeDefinition, SolverSettings
 
-__all__ = ["HeatSolver", "SolverSettings"]
+__all__ = ["HeatSolver", "SolverSettings", "ProbeDefinition"]

@@ -19,5 +19,14 @@ boundaries:
     type: radiation
     value: 25
     h_coeff: 0.9
+measurements:
+  - name: Ch1_2cm_deep
+    position: [0, 3, 12.5]
+    units: cm
+  - name: Ch2_surface
+    position: [0, 5, 12.5]
+    units: cm
 total_time_s: 28800
 dt_s: 20
+
+

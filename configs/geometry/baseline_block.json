@@ -25,11 +25,11 @@
       "name": "heater_rod",
       "params": {
         "radius": 0.8,
-        "height": 25,
+        "height": 20,
         "center": [
           0,
           0,
-          12.5
+          12
         ],
         "axis": "z",
         "material": "nichrome",
