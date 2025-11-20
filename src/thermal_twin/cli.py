@@ -85,7 +85,7 @@ def _probe_plot_sink():
         _redraw()
         plt.pause(0.001)
 
-    return _sink, fig
+        def _close() -> None:\n        import matplotlib.pyplot as plt\n        plt.close(fig)\n\n    return _sink, _close
 
 def _progress_sink(progress: Progress, task_id: TaskID) -> Callable[[Dict[str, Any]], None]:
     def _sink(event: Dict[str, Any]) -> None:
@@ -139,9 +139,9 @@ def simulate(
             task_id = progress.add_task("Simulating", total=1.0)
             sinks.append(_progress_sink(progress, task_id))
         if live_plot:
-            plot_sink, fig = _probe_plot_sink()
+            plot_sink, plot_close = _probe_plot_sink()
             sinks.append(plot_sink)
-            stack.callback(fig.close)
+            stack.callback(plot_close)
         telemetry_cb = _build_dispatcher(sinks)
         runner = ScenarioRunner(config, telemetry=telemetry_cb)
         result = runner.run()
@@ -197,4 +197,5 @@ def app_entry() -> None:  # pragma: no cover
 
 if __name__ == "__main__":  # pragma: no cover
     app_entry()
+
 
