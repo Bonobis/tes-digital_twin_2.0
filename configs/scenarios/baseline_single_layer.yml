@@ -14,7 +14,7 @@ heater:
 boundaries:
   - region: outer_shell
     type: convection
-    value: 25
+    value: 26.2
     h_coeff: 8.0
 measurements:
   - name: Ch1_surface
