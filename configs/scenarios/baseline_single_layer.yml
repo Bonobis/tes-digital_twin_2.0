@@ -9,7 +9,7 @@ mesh:
 heater:
   name: heater_rod
   max_temperature_c: 600
-  ramp_minutes: 10
+  ramp_seonds: 1200
   turn_off_seconds: 25840
 boundaries:
   - region: outer_shell
@@ -29,7 +29,7 @@ measurements:
   - name: Ch4_on_heater
     position: [0, 0, 12.5]
     units: cm
-total_time_s: 2000
+total_time_s: 6000
 dt_s: 20
 
 

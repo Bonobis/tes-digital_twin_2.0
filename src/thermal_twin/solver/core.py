@@ -51,7 +51,8 @@ class HeaterContext:
             return self.ambient
         if self.ramp_seconds <= 0:
             return self.max_temp
-        return self.max_temp * min(1.0, max(0.0, time_s / self.ramp_seconds))
+        frac = min(1.0, max(0.0, time_s / self.ramp_seconds))
+        return self.ambient + (self.max_temp - self.ambient) * frac
 
 
 @dataclass
