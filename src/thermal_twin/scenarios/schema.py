@@ -20,9 +20,16 @@ class HeaterSchedule(BaseModel):
     name: str
     max_temperature_c: float
     ramp_minutes: float = 30.0
+    ramp_seconds: Optional[float] = None
     turn_off_seconds: Optional[float] = None
     turn_off_minutes: Optional[float] = None
     turn_off_hours: Optional[float] = None
+
+    @property
+    def ramp_s(self) -> float:
+        if self.ramp_seconds is not None:
+            return float(self.ramp_seconds)
+        return max(0.0, float(self.ramp_minutes) * 60.0)
 
     @property
     def turn_off_s(self) -> Optional[float]:

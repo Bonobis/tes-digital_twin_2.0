@@ -9,7 +9,8 @@ mesh:
 heater:
   name: heater_rod
   max_temperature_c: 600
-  ramp_minutes: 5
+  ramp_minutes: 10
+  turn_off_seconds: 25840
 boundaries:
   - region: outer_shell
     type: convection
@@ -24,12 +25,11 @@ measurements:
     units: cm
   - name: Ch3_near_heater
     position: [0, 1.5, 12.5]
-
     units: cm
   - name: Ch4_on_heater
     position: [0, 0, 12.5]
     units: cm
-total_time_s: 600
+total_time_s: 2000
 dt_s: 20
 
 

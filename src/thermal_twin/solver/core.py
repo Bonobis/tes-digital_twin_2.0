@@ -420,7 +420,7 @@ class HeatSolver:
             material = self.element_materials.get(heater.name)
             if material:
                 mask = self._cell_mask(mesh, material)
-        ramp_seconds = max(0.0, heater.ramp_minutes * 60.0)
+        ramp_seconds = max(0.0, heater.ramp_s)
         off_s = heater.turn_off_s
         return HeaterContext(
             mask=mask,
