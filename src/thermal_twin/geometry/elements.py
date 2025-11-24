@@ -288,6 +288,8 @@ def _build_shell(element: GeometryElement, ctx: BuildContext) -> List[Tuple[int,
     target_name = params.get("target")
     if not target_name:
         raise ValueError("Shell element requires 'target' parameter")
+    if target_name not in ctx.elements:
+        raise ValueError(f"Shell target '{target_name}' not found in geometry")
     thickness = float(params["thickness"])
     gap = float(params.get("gap", 0.0))
     if gap < 0:
@@ -298,7 +300,14 @@ def _build_shell(element: GeometryElement, ctx: BuildContext) -> List[Tuple[int,
     outer_origin_m = _scale_tuple(outer_bbox.origin, ctx.unit_scale)
     outer_size_m = _scale_tuple(outer_bbox.size, ctx.unit_scale)
     outer_tag = gmsh.model.occ.addBox(*outer_origin_m, *outer_size_m)
-    dimtags = [(3, outer_tag)]
+    target_record = ctx.elements[target_name]
+    cut_objs, _ = gmsh.model.occ.cut(
+        objectDimTags=[(3, outer_tag)],
+        toolDimTags=[dt for dt in target_record.dimtags if dt[0] == 3],
+        removeObject=False,
+        removeTool=False,
+    )
+    dimtags = [(dim, tag) for dim, tag in cut_objs]
     ctx.register_element(element, dimtags, bbox=outer_bbox)
     return dimtags
 

@@ -10,15 +10,11 @@ heater:
   name: heater_rod
   max_temperature_c: 600
   ramp_minutes: 5
-# boundaries:
-  # - region: outer_shell
-  #   type: convection
-  #   value: 25
-  #   h_coeff: 5.0
-  # - region: exposed_face
-  #   type: radiation
-  #   value: 25
-  #   h_coeff: 0.9
+boundaries:
+  - region: outer_shell
+    type: convection
+    value: 25
+    h_coeff: 8.0
 measurements:
   - name: Ch1_surface
     position: [0, 4.9, 12.5]
@@ -27,12 +23,13 @@ measurements:
     position: [0, 3, 12.5]
     units: cm
   - name: Ch3_near_heater
-    position: [0, 0.5, 12.5]
+    position: [0, 1.5, 12.5]
+
     units: cm
   - name: Ch4_on_heater
     position: [0, 0, 12.5]
     units: cm
-total_time_s: 5000
+total_time_s: 600
 dt_s: 20
 
 

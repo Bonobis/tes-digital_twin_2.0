@@ -105,6 +105,9 @@ class MeshBuilder:
     def _register_element_groups(self, ctx: BuildContext) -> Dict[str, int]:
         groups: Dict[str, int] = {}
         for name, record in ctx.elements.items():
+            # Skip elements that already map to a material to avoid duplicate volume tagging.
+            if record.element.material:
+                continue
             volumes = [tag for dim, tag in record.dimtags if dim == 3]
             if not volumes:
                 continue

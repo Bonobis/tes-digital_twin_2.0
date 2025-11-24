@@ -20,6 +20,19 @@ class HeaterSchedule(BaseModel):
     name: str
     max_temperature_c: float
     ramp_minutes: float = 30.0
+    turn_off_seconds: Optional[float] = None
+    turn_off_minutes: Optional[float] = None
+    turn_off_hours: Optional[float] = None
+
+    @property
+    def turn_off_s(self) -> Optional[float]:
+        if self.turn_off_seconds is not None:
+            return float(self.turn_off_seconds)
+        if self.turn_off_minutes is not None:
+            return float(self.turn_off_minutes) * 60.0
+        if self.turn_off_hours is not None:
+            return float(self.turn_off_hours) * 3600.0
+        return None
 
 
 class BoundaryCondition(BaseModel):

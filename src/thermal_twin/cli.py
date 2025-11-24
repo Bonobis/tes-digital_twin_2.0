@@ -86,7 +86,12 @@ def _probe_plot_sink():
         import matplotlib.pyplot as plt
         plt.close(fig)
 
-    return _sink, _close
+    def _show_block() -> None:
+        import matplotlib.pyplot as plt
+        plt.ioff()
+        plt.show()
+
+    return _sink, _close, _show_block
 
 
 def _progress_sink(progress: Progress, task_id: TaskID) -> Callable[[Dict[str, Any]], None]:
@@ -141,8 +146,9 @@ def simulate(
             )
             task_id = progress.add_task("Simulating", total=1.0)
             sinks.append(_progress_sink(progress, task_id))
+        plot_block = None
         if live_plot:
-            plot_sink, plot_close = _probe_plot_sink()
+            plot_sink, plot_close, plot_block = _probe_plot_sink()
             sinks.append(plot_sink)
             if live_plot_autoclose:
                 stack.callback(plot_close)
@@ -154,6 +160,8 @@ def simulate(
     if output:
         _prepare_output_path(output, "Output")
         output.write_text(json.dumps(result, indent=2))
+    if live_plot and not live_plot_autoclose and plot_block is not None:
+        plot_block()
     _render_summary(result)
 
 
