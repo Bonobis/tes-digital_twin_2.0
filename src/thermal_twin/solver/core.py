@@ -314,6 +314,20 @@ class HeatSolver:
                 continue
             base_mask = np.array(mask_var.value, dtype=bool)
             mask = self._filter_boundary_faces(boundary.region, base_mask, face_centers)
+            if boundary.faces:
+                face_norms = np.asarray(mesh.faceNormals)
+                magnitudes = np.linalg.norm(face_norms, axis=0)
+                for face_label in boundary.faces:
+                    label = face_label.strip().lower()
+                    axis = {"x":0,"y":1,"z":2}.get(label[-1]) if label else None
+                    if axis is None:
+                        continue
+                    sign = 1.0 if label.startswith('+') else -1.0 if label.startswith('-') else None
+                    if sign is None:
+                        continue
+                    comp = face_norms[axis]
+                    align = comp * sign >= 0.9 * magnitudes
+                    mask = mask & align
             if not mask.any():
                 continue
             region_cells = self._region_cell_mask(mesh, boundary.region)

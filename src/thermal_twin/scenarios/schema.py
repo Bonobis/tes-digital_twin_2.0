@@ -47,6 +47,8 @@ class BoundaryCondition(BaseModel):
     type: str
     value: float
     h_coeff: Optional[float] = None
+    emissivity: Optional[float] = None
+    faces: Optional[list[str]] = None
 
 
 class MeasurementProbe(BaseModel):

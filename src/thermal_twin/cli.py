@@ -59,7 +59,10 @@ def _probe_plot_sink():
     def _redraw() -> None:
         ax.clear()
         for name, (ts, vals) in data.items():
-            ax.plot(ts, vals, label=name)
+            if not ts:
+                continue
+            label = f"{name} ({vals[-1]:.1f}C)"
+            ax.plot(ts, vals, label=label)
         ax.set_xlabel("time (s)")
         ax.set_ylabel("temperature (degC)")
         if data:

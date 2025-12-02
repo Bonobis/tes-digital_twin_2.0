@@ -120,6 +120,8 @@ class MeshBuilder:
         role = element.params.get("role")
         if role == "heater":
             return 300
+        if role == "heater_bedding":
+            return 250
         if element.type == "block":
             return 200
         return 100
