@@ -8,19 +8,19 @@ mesh:
   rod_refinement_mm: 2.0
 heater:
   name: heater_rod
-  max_temperature_c: 600
-  ramp_seconds: 600
-  turn_off_seconds: 25840
+  max_temperature_c: 550
+  ramp_seconds: 660
+  turn_off_seconds: 25880
 boundaries:
   - region: outer_shell
     type: convection
-    value: 26.2
+    value: 26
     h_coeff: 17.0
     emissivity: 0.9
   - region: outer_shell
     type: convection
     value: 26.2
-    h_coeff: 25.0   # higher loss on the exposed top
+    h_coeff: 23.0   # higher loss on the exposed top
     emissivity: 0.9
     faces: ["+z"]
 measurements:
@@ -36,5 +36,5 @@ measurements:
   - name: Ch4_on_heater
     position: [5, 5, 12.5]
     units: cm
-total_time_s: 25840
+total_time_s: 25880
 dt_s: 20
