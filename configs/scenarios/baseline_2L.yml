@@ -1,0 +1,40 @@
+﻿version: 1
+name: baseline_2L
+geometry_file: ../geometry/baseline_block_2L.json
+materials_file: ../../materials.json
+description: Geopolymer block with double-thickness insulation (2x 13mm blanket) and 10-minute heater ramp to 550C.
+mesh:
+  global_size_mm: 10
+  rod_refinement_mm: 2.0
+heater:
+  name: heater_rod
+  max_temperature_c: 550
+  ramp_seconds: 660
+  turn_off_seconds: 25880
+boundaries:
+  - region: outer_shell
+    type: convection
+    value: 26
+    h_coeff: 17.0
+    emissivity: 0.9
+  - region: outer_shell
+    type: convection
+    value: 26.2
+    h_coeff: 23.0   # higher loss on the exposed top
+    emissivity: 0.9
+    faces: ["+z"]
+measurements:
+  - name: Ch1_surface
+    position: [5, 9.9, 12.5]
+    units: cm
+  - name: Ch2_2cm_deep
+    position: [5, 8, 12.5]
+    units: cm
+  - name: Ch3_near_heater
+    position: [5, 6.5, 12.5]
+    units: cm
+  - name: Ch4_on_heater
+    position: [5, 5, 12.5]
+    units: cm
+total_time_s: 25880
+dt_s: 20

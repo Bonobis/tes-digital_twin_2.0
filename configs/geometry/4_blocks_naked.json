@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "units": "cm",
+  "name": "4_blocks_naked",
+  "elements": [
+    {
+      "type": "block",
+      "name": "geopolymer_core",
+      "params": {
+        "size": [
+          10,
+          10,
+          120
+        ],
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod",
+      "params": {
+        "radius": 1.25,
+        "height": 122,
+        "center": [
+          5,
+          5,
+          60
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding",
+      "params": {
+        "radius": 1.3,
+        "height": 120,
+        "center": [
+          5,
+          5,
+          60
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap1_air",
+      "params": {
+        "size": [
+          10,
+          10,
+          0.2
+        ],
+        "origin": [
+          0,
+          0,
+          29.9
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap2_air",
+      "params": {
+        "size": [
+          10,
+          10,
+          0.2
+        ],
+        "origin": [
+          0,
+          0,
+          59.9
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap3_air",
+      "params": {
+        "size": [
+          10,
+          10,
+          0.2
+        ],
+        "origin": [
+          0,
+          0,
+          89.9
+        ],
+        "material": "air_gap"
+      }
+    }
+  ]
+}
