@@ -1,0 +1,112 @@
+﻿\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\title{Digital Twin for Transient Heat Diffusion in Composite Heater--Insulation Assemblies}
+\author{Draft Methodology (for Energies submission)}
+\date{\today}
+\begin{document}
+\maketitle
+\section{System Overview}
+We simulate transient heat conduction in heterogeneous solids with (i) prescribed heater temperature ramps (Dirichlet), (ii) convection and linearized radiation at exposed faces (Robin), and (iii) optional thin, low-conductivity gaps to represent imperfect contacts. The solver uses FiPy finite volumes on gmsh-generated unstructured tetrahedral meshes, with temperature-dependent properties from a material catalog.
+
+Geometries considered: (a) baseline single-layer: $10\times10\times25$ cm geopolymer core, heater rod ($r=\SI{0.8}{cm}$), brick-dust bedding ($r=\SI{1.0}{cm}$), silica blanket shell ($t=\SI{1.3}{cm}$); (b) double-layer: same core, shell $t=\SI{2.6}{cm}$; (c) four-block $120$ cm ``naked'' stack: core $10\times10\times120$ cm, heater $r=\SI{1.25}{cm}$, bedding $r=\SI{1.3}{cm}$, three \SI{2}{mm} low-$k$ gaps.
+
+\section{Governing Equations}
+\subsection{Heat Equation}
+For each material region:
+\begin{equation}
+\rho c_p \frac{\partial T}{\partial t} = \nabla\cdot(k \nabla T) + q,
+\end{equation}
+with density $\rho$ [kg/m$^3$], heat capacity $c_p$ [J/kg$\cdot$K], conductivity $k$ [W/m$\cdot$K], and volumetric source $q$ (set to zero; the heater is imposed via Dirichlet).
+
+\subsection{Dirichlet Heater Ramp}
+Heater temperature:
+\begin{equation}
+T_h(t) =
+\begin{cases}
+T_0 + (T_{\max}-T_0)\, t / t_{\mathrm{ramp}}, & t < t_{\mathrm{ramp}}, \\
+T_{\max}, & t \ge t_{\mathrm{ramp}}.
+\end{cases}
+\end{equation}
+An efficiency factor $\eta_h\in(0,1]$ may be applied: $T_{\max,\mathrm{eff}} = \eta_h T_{\max}$.
+
+\subsection{Robin Boundary: Convection + Linearized Radiation}
+On a surface $\Gamma$ with outward normal $\mathbf{n}$:
+\begin{equation}
+- k_{\mathrm{face}}\, \mathbf{n}\cdot \nabla T = h (T - T_\infty) + h_{\mathrm{rad}} (T - T_\infty),
+\end{equation}
+where $h$ is the convective coefficient, $T_\infty$ ambient temperature, and linearized radiation term
+\begin{equation}
+h_{\mathrm{rad}} = 4 \sigma \varepsilon T_\infty^3,
+\end{equation}
+with emissivity $\varepsilon$ and Stefan--Boltzmann constant $\sigma$. Effective coefficient: $h_{\mathrm{eff}} = h + h_{\mathrm{rad}}$. Face conductivity $k_{\mathrm{face}}$ is taken from the adjacent cell material.
+
+\subsection{Low-Conductivity Gaps}
+Imperfect contacts are represented as explicit thin layers (material \texttt{air\_gap}) with low $k$, adding conduction resistance without explicit contact-resistance models.
+
+\section{Material Properties (Catalog Snapshot)}
+\begin{itemize}
+  \item Geopolymer: $\rho\approx \SI{1960}{kg/m^3}$; $c_p\approx$ \SIrange{950}{1050}{J/kg.K}; $\alpha\approx \SI{4.4e-7}{4.7e-7}{m^2/s}$.
+  \item Nichrome: $k\approx$ \SIrange{14}{16.5}{W/m.K}; $c_p\approx$ \SIrange{440}{500}{J/kg.K}; $\rho=\SI{8400}{kg/m^3}$.
+  \item Silica blanket: $k=$ \SIrange{0.04}{0.40}{W/m.K} (\SI{260}{\celsius}--\SI{1200}{\celsius}); $\rho=\SI{128}{kg/m^3}$; $c_p=$ \SIrange{900}{1150}{J/kg.K}.
+  \item Brick powder (bedding): $k=[0.28,0.27,0.26,0.25,0.24]$ W/m$\cdot$K (\SI{20}{\celsius}--\SI{700}{\celsius}); $\rho\approx$ \SIrange{1560}{1620}{kg/m^3}; $c_p\approx$ \SIrange{880}{990}{J/kg.K}.
+  \item Air gap: $k=[0.026,0.030,0.034,0.038,0.042]$ W/m$\cdot$K; $\rho=\SI{1.2}{kg/m^3}$; $c_p=\SI{1000}{J/kg.K}$.
+  \item Emissivity default $\varepsilon=0.9$.
+\end{itemize}
+
+\section{Boundary Conditions Used}
+\begin{itemize}
+  \item Baseline / 2L: convection on \texttt{outer\_shell} with $h=\SI{17}{W/m^2.K}$; +z insertion face $h=\SI{23}{W/m^2.K}$; $T_\infty\approx \SI{26}{\celsius}$; $\varepsilon=0.9$.
+  \item Naked 4-block: convection on \texttt{geopolymer\_core} directly; $h=\SI{18}{W/m^2.K}$; $\varepsilon=0.9$.
+\end{itemize}
+
+\section{Meshing and Quality}
+\begin{itemize}
+  \item gmsh 3D tetra meshes; global size typically \SI{10}{mm}; rod refinement \SI{2}{mm}; gaps \SI{2}{mm} thick.
+  \item Quality metric: radius ratio; accepted min $\ge 0.2$ (observed 0.20--0.39), mean $\sim 0.80$--0.86.
+  \item Cell distances floored to $10^{-6}$ to avoid divide-by-zero in FiPy face terms.
+  \item Exports: \texttt{.msh} (v2.2) and \texttt{.vtu} (preview).
+\end{itemize}
+
+\section{Solver Workflow}
+\begin{enumerate}
+  \item Parse scenario YAML (geometry, mesh controls, heater schedule, BCs, probes, time controls).
+  \item Build gmsh model, fragment, tag physical groups, generate mesh.
+  \item Convert to FiPy mesh (Gmsh3D); regularize distances.
+  \item Interpolate material fields ($k, c_p, \rho$) per cell (temperature-dependent).
+  \item Impose heater Dirichlet ramp; advance transient (implicit scheme).
+  \item Apply Robin BCs with $h_{\mathrm{eff}} = h + 4\sigma\varepsilon T_\infty^3$.
+  \item Stream telemetry (NDJSON), optional live plot; write summary JSON.
+\end{enumerate}
+
+\section{Assumptions and Limitations}
+\begin{itemize}
+  \item Heater as uniform Dirichlet (no electrical/coil geometry); efficiency factor $\eta_h$ can approximate unmodeled losses.
+  \item Contact resistance via explicit low-$k$ gaps (no TCR model).
+  \item Radiation linearized around ambient; nonlinear form not yet used at very high $T$.
+  \item No phase change or dehydration; no fluid flow; convection coefficients uniform.
+  \item Probes are point samples; no sensor mass/lag.
+\end{itemize}
+
+\section{Planned Extensions}
+Nonlinear radiation BC; heater efficiency parameter in scenarios; true contact conductance model; data-driven heater power; calibration/optimization vs experimental NDJSON; adaptive refinement near heater/gaps.
+
+\section{Validation Plan}
+Compare ramps/plateaus vs experimental datasets (1L/2L, long stack) with RMSE per probe and timing to milestones (\SI{100}{\celsius}, \SI{200}{\celsius}, etc.). Sensitivity: vary $h$, bedding $k$, gap $k$/thickness, $\eta_h$. Stability checks with smaller $dt$ on stiff cases.
+
+\section{Key Formulae}
+\begin{itemize}
+  \item Heat: $\rho c_p \partial T/\partial t = \nabla\cdot(k\nabla T)$.
+  \item Heater: Dirichlet ramp to $\eta_h T_{\max}$.
+  \item Robin: $-k\nabla T\cdot n = (h + 4\sigma\varepsilon T_\infty^3)(T - T_\infty)$.
+  \item Linearized radiation: $h_{\mathrm{rad}} = 4\sigma\varepsilon T_\infty^3$.
+\end{itemize}
+
+\section{Citations}
+[CITATION] FiPy FVM solver; [CITATION] gmsh; [CITATION] Mesh quality (radius ratio); [CITATION] Linearized radiation BC; [CITATION] Thermal properties; [CITATION] Contact resistance.
+
+\end{document}
