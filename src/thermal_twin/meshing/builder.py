@@ -1,4 +1,4 @@
-
+﻿
 """gmsh-based mesh builder."""
 from __future__ import annotations
 
@@ -122,6 +122,12 @@ class MeshBuilder:
             return 300
         if role == "heater_bedding":
             return 250
+        if element.material == "air_gap":
+            return 230
+        if role == "pipe":
+            return 240
+        if role == "container":
+            return 50
         if element.type == "block":
             return 200
         return 100
@@ -134,7 +140,8 @@ class MeshBuilder:
         if rod_size_mm:
             rod_size = float(rod_size_mm) * 1e-3
             for record in ctx.elements.values():
-                if record.element.type != "cylinder" and record.element.params.get("role") != "heater":
+                role = record.element.params.get("role")
+                if record.element.type not in {"cylinder", "helix_pipe"} and role not in {"heater", "pipe"}:
                     continue
                 points = _collect_points_from_dimtags(record.dimtags)
                 if points:
@@ -196,4 +203,5 @@ class MeshBuilder:
                 f"Mesh minimum quality {min_quality:.3f} is below the required threshold {min_threshold:.3f}"
             )
         return {"min": float(min_quality), "mean": float(mean_quality), "count": int(count)}
+
 

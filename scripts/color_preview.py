@@ -1,9 +1,13 @@
-﻿r"""Preview mesh with custom colors per region.
+﻿r"""Render a VTU/VTK mesh with stable colors per physical region.
+
+This is meant for quickly generating consistent-looking figures from gmsh/meshio
+exports, since default renderers can assign arbitrary colors per block.
 
 Usage:
-  .\.venv\Scripts\python scripts\color_preview.py outputs/meshes/4_blocks_naked.vtu --png preview.png
+  .\.venv\Scripts\python scripts\color_preview.py outputs/meshes/4_blocks_naked.vtu --png publication/figures/4_blocks_naked_mesh.png
 """
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
 from typing import Dict
@@ -12,13 +16,24 @@ import meshio
 import numpy as np
 import pyvista as pv
 
+# Color by physical-group name (typically material names for tetra groups)
 DEFAULT_COLORS: Dict[str, str] = {
-    "geopolymer_core": "#d97706",   # orange
-    "heater_bedding": "#8b5a2b",    # brownish
-    "heater_rod": "#6b7280",        # gray
-    "gap1_air": "#38bdf8",          # light blue
-    "gap2_air": "#0ea5e9",          # blue
-    "gap3_air": "#0284c7",          # darker blue,
+    # Materials
+    "dias_geopolymer": "#d97706",        # orange
+    "geopolymer_uncured": "#facc15",    # bright yellow
+    "brick_powder": "#8b5a2b",          # brown
+    "nichrome": "#6b7280",              # gray
+    "stainless_steel": "#9ca3af",       # light gray
+    "silica_blanket": "#34d399",        # green
+    "rockwool": "#22c55e",              # green
+    "air_gap": "#38bdf8",               # light blue
+
+    # Element names (fallback if tetra physical groups are element-tagged)
+    "geopolymer_core": "#d97706",
+    "heater_bedding": "#8b5a2b",
+    "heater_rod": "#6b7280",
+    "outer_shell": "#34d399",
+    "rockwool_shell": "#22c55e",
 }
 
 
@@ -39,14 +54,14 @@ def meshio_to_pv(mesh: meshio.Mesh) -> pv.UnstructuredGrid:
     # Build VTK-style cells array: [4, id0, id1, id2, id3, 4, ...]
     cell_conn = np.hstack([np.full((n_cells, 1), 4, dtype=np.int64), cells.astype(np.int64)]).ravel()
     celltypes = np.full(n_cells, pv.CellType.TETRA, dtype=np.uint8)
-    grid = pv.UnstructuredGrid(cell_conn, celltypes, mesh.points)
-    return grid
+    return pv.UnstructuredGrid(cell_conn, celltypes, mesh.points)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("mesh", type=Path, help="Path to VTU/VTK/mesh file")
     parser.add_argument("--png", type=Path, help="Optional PNG output")
+    parser.add_argument("--opacity", type=float, default=0.35, help="Mesh opacity (0-1)")
     args = parser.parse_args()
 
     m = meshio.read(args.mesh)
@@ -69,26 +84,27 @@ def main() -> None:
             color = palette[idx % len(palette)]
         lut[rid] = color
 
-    pl = pv.Plotter()
+    off_screen = args.png is not None
+    pl = pv.Plotter(off_screen=off_screen, window_size=(1800, 1000))
     for rid in unique_ids:
         mask = grid.threshold(value=(rid - 0.5, rid + 0.5), scalars="region_id", invert=False)
         name = tag_to_name.get(rid, f"id_{rid}")
-        color = lut[rid]
         pl.add_mesh(
             mask,
-            color=color,
+            color=lut[rid],
             show_scalar_bar=False,
-            opacity=0.35,
+            opacity=float(args.opacity),
             label=name,
-            edge_color="black",
             show_edges=False,
         )
-    pl.add_legend()
+    pl.add_legend(bcolor="white")
     pl.add_axes()
     pl.show_bounds(grid="front")
 
     if args.png:
+        args.png.parent.mkdir(parents=True, exist_ok=True)
         pl.show(screenshot=str(args.png))
+        print(f"Saved {args.png}")
     else:
         pl.show()
 

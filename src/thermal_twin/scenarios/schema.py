@@ -1,4 +1,4 @@
-"""Pydantic models describing scenario configuration."""
+﻿"""Pydantic models describing scenario configuration."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,6 +14,7 @@ def _default_mesh_controls() -> "MeshControls":
 class MeshControls(BaseModel):
     global_size_mm: float = Field(5.0, ge=0.1)
     rod_refinement_mm: Optional[float] = Field(None, ge=0.05)
+    min_quality: float = Field(0.1, ge=0.0, le=1.0)
 
 
 class HeaterSchedule(BaseModel):
@@ -86,3 +87,4 @@ class ScenarioConfig(BaseModel):
         if "materials_file" in data and not Path(data["materials_file"]).is_absolute():
             data["materials_file"] = base / data["materials_file"]
         return cls(**data)
+

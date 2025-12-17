@@ -1,0 +1,26 @@
+﻿version: 1
+name: pilot_scheme
+geometry_file: ../geometry/pilot_scheme.json
+materials_file: ../../materials.json
+description: Pilot 3x3 stack of 4-block arrays with separator geopolymer, central spiral stainless pipe, and 5cm rockwool shell.
+mesh:
+  global_size_mm: 20
+  rod_refinement_mm: 4.0
+  min_quality: 0.08
+heater:
+  name: heater_rod
+  max_temperature_c: 600
+  ramp_seconds: 660
+  turn_off_seconds: 25880
+boundaries:
+  - region: rockwool_shell
+    type: convection
+    value: 26
+    h_coeff: 12.0
+    emissivity: 0.9
+measurements: []
+total_time_s: 25880
+dt_s: 20
+
+
+

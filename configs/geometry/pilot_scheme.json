@@ -1,0 +1,947 @@
+{
+  "version": 1,
+  "units": "cm",
+  "name": "pilot_scheme",
+  "elements": [
+    {
+      "type": "block",
+      "name": "stack_union",
+      "params": {
+        "size": [
+          31.0,
+          31.0,
+          120.0
+        ],
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "role": "container"
+      }
+    },
+    {
+      "type": "shell",
+      "name": "rockwool_shell",
+      "params": {
+        "target": "stack_union",
+        "thickness": 5.0,
+        "material": "rockwool",
+        "apply_faces": [
+          "+x",
+          "-x",
+          "+y",
+          "-y",
+          "+z",
+          "-z"
+        ],
+        "gap": 0.0
+      }
+    },
+    {
+      "type": "block",
+      "name": "sep_x_1",
+      "params": {
+        "size": [
+          0.5,
+          31.0,
+          120.0
+        ],
+        "origin": [
+          10.0,
+          0,
+          0
+        ],
+        "material": "geopolymer_uncured"
+      }
+    },
+    {
+      "type": "block",
+      "name": "sep_x_2",
+      "params": {
+        "size": [
+          0.5,
+          31.0,
+          120.0
+        ],
+        "origin": [
+          20.5,
+          0,
+          0
+        ],
+        "material": "geopolymer_uncured"
+      }
+    },
+    {
+      "type": "block",
+      "name": "sep_y_1",
+      "params": {
+        "size": [
+          31.0,
+          0.5,
+          120.0
+        ],
+        "origin": [
+          0,
+          10.0,
+          0
+        ],
+        "material": "geopolymer_uncured"
+      }
+    },
+    {
+      "type": "block",
+      "name": "sep_y_2",
+      "params": {
+        "size": [
+          31.0,
+          0.5,
+          120.0
+        ],
+        "origin": [
+          0,
+          20.5,
+          0
+        ],
+        "material": "geopolymer_uncured"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_0_0",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          0.0,
+          0.0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_0_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          0.0,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_0_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          0.0,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_0_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          0.0,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_0_0",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          5.0,
+          5.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_0_0",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          5.0,
+          5.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_0_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          0.0,
+          10.5,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_1_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          10.5,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_1_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          10.5,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_1_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          10.5,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_0_1",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          5.0,
+          15.5,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_0_1",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          5.0,
+          15.5,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_0_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          0.0,
+          21.0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_2_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          21.0,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_2_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          21.0,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_0_2_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          0.0,
+          21.0,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_0_2",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          5.0,
+          26.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_0_2",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          5.0,
+          26.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_1_0",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          10.5,
+          0.0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_1_0_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          10.5,
+          0.0,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_1_0_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          10.5,
+          0.0,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_1_0_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          10.5,
+          0.0,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_1_0",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          15.5,
+          5.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_1_0",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          15.5,
+          5.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_1_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          10.5,
+          10.5,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_1_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          10.5,
+          21.0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_1_2_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          10.5,
+          21.0,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_1_2_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          10.5,
+          21.0,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_1_2_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          10.5,
+          21.0,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_1_2",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          15.5,
+          26.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_1_2",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          15.5,
+          26.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_2_0",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          21.0,
+          0.0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_0_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          0.0,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_0_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          0.0,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_0_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          0.0,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_2_0",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          26.0,
+          5.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_2_0",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          26.0,
+          5.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_2_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          21.0,
+          10.5,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_1_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          10.5,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_1_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          10.5,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_1_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          10.5,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_2_1",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          26.0,
+          15.5,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_2_1",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          26.0,
+          15.5,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "block",
+      "name": "block_2_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          120.0
+        ],
+        "origin": [
+          21.0,
+          21.0,
+          0
+        ],
+        "material": "dias_geopolymer"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_2_1",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          21.0,
+          29.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_2_2",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          21.0,
+          59.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "block",
+      "name": "gap_2_2_3",
+      "params": {
+        "size": [
+          10.0,
+          10.0,
+          0.5
+        ],
+        "origin": [
+          21.0,
+          21.0,
+          89.75
+        ],
+        "material": "air_gap"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_rod_2_2",
+      "params": {
+        "radius": 1.25,
+        "height": 122.0,
+        "center": [
+          26.0,
+          26.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "nichrome",
+        "role": "heater"
+      }
+    },
+    {
+      "type": "cylinder",
+      "name": "heater_bedding_2_2",
+      "params": {
+        "radius": 1.3,
+        "height": 120.0,
+        "center": [
+          26.0,
+          26.0,
+          60.0
+        ],
+        "axis": "z",
+        "material": "brick_powder",
+        "role": "heater_bedding"
+      }
+    },
+    {
+      "type": "helix_pipe",
+      "name": "central_spiral_pipe",
+      "params": {
+        "center": [
+          15.5,
+          15.5,
+          60.0
+        ],
+        "axis": "z",
+        "height": 120.0,
+        "loops": 12,
+        "helix_radius": 3.5,
+        "tube_radius": 0.6,
+        "points_per_loop": 32,
+        "trihedron": "DiscreteTrihedron",
+        "material": "stainless_steel",
+        "role": "pipe"
+      }
+    }
+  ]
+}

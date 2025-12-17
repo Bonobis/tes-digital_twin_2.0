@@ -1,4 +1,4 @@
-"""Geometry element abstractions and gmsh builders."""
+﻿"""Geometry element abstractions and gmsh builders."""
 from __future__ import annotations
 
 import math
@@ -312,6 +312,103 @@ def _build_shell(element: GeometryElement, ctx: BuildContext) -> List[Tuple[int,
     return dimtags
 
 
+@GeometryElement.register("helix_pipe")
+def _build_helix_pipe(element: GeometryElement, ctx: BuildContext) -> List[Tuple[int, int]]:
+    """Create a solid helical pipe by sweeping a disk along a helical wire.
+
+    Parameters (in config units):
+      - center: helix center point
+      - height: axial span of helix
+      - loops: number of full turns
+      - helix_radius: radius of helix centerline
+      - tube_radius: radius of pipe cross-section (solid)
+      - axis: currently only 'z' supported
+      - trihedron: optional gmsh trihedron mode for the sweep
+    """
+    params = element.params
+    axis = str(params.get("axis", "z")).lower()
+    if axis != "z":
+        raise ValueError("helix_pipe currently supports only axis=\"z\"")
+    center = _vector(params, "center", fallback=params.get("origin", [0.0, 0.0, 0.0]))
+    height = float(params["height"])
+    loops = int(params["loops"])
+    helix_radius = float(params["helix_radius"])
+    tube_radius = float(params["tube_radius"])
+    if loops <= 0:
+        raise ValueError("helix_pipe requires loops > 0")
+    if height <= 0 or helix_radius <= 0 or tube_radius <= 0:
+        raise ValueError("helix_pipe requires positive height, helix_radius and tube_radius")
+
+    points_per_loop = int(params.get("points_per_loop", 24))
+    points_per_loop = max(8, points_per_loop)
+    total_points = loops * points_per_loop + 1
+    pitch = height / loops
+    z_start = center[2] - 0.5 * height
+
+    point_tags: List[int] = []
+    for i in range(total_points):
+        theta = 2.0 * math.pi * loops * (i / (total_points - 1))
+        x = center[0] + helix_radius * math.cos(theta)
+        y = center[1] + helix_radius * math.sin(theta)
+        z = z_start + (pitch * theta) / (2.0 * math.pi)
+        x_m, y_m, z_m = _scale_tuple((x, y, z), ctx.unit_scale)
+        point_tags.append(gmsh.model.occ.addPoint(x_m, y_m, z_m))
+
+    spline_tag = gmsh.model.occ.addSpline(point_tags)
+    wire_tag = gmsh.model.occ.addWire([spline_tag])
+
+    dz_dtheta = pitch / (2.0 * math.pi)
+    tangent = (0.0, helix_radius, dz_dtheta)
+    t_norm = math.sqrt(tangent[0] ** 2 + tangent[1] ** 2 + tangent[2] ** 2)
+    z_axis = [tangent[0] / t_norm, tangent[1] / t_norm, tangent[2] / t_norm]
+
+    ref = (1.0, 0.0, 0.0)
+    dot = ref[0] * z_axis[0] + ref[1] * z_axis[1] + ref[2] * z_axis[2]
+    x_axis = [ref[0] - dot * z_axis[0], ref[1] - dot * z_axis[1], ref[2] - dot * z_axis[2]]
+    x_norm = math.sqrt(x_axis[0] ** 2 + x_axis[1] ** 2 + x_axis[2] ** 2)
+    if x_norm < 1e-12:
+        ref = (0.0, 1.0, 0.0)
+        dot = ref[0] * z_axis[0] + ref[1] * z_axis[1] + ref[2] * z_axis[2]
+        x_axis = [ref[0] - dot * z_axis[0], ref[1] - dot * z_axis[1], ref[2] - dot * z_axis[2]]
+        x_norm = math.sqrt(x_axis[0] ** 2 + x_axis[1] ** 2 + x_axis[2] ** 2)
+    x_axis = [x_axis[0] / x_norm, x_axis[1] / x_norm, x_axis[2] / x_norm]
+
+    start_x = center[0] + helix_radius
+    start_y = center[1]
+    start_z = z_start
+    start_x_m, start_y_m, start_z_m = _scale_tuple((start_x, start_y, start_z), ctx.unit_scale)
+    disk_tag = gmsh.model.occ.addDisk(
+        start_x_m,
+        start_y_m,
+        start_z_m,
+        tube_radius * ctx.unit_scale,
+        tube_radius * ctx.unit_scale,
+        zAxis=z_axis,
+        xAxis=x_axis,
+    )
+
+    trihedron = str(params.get("trihedron", "DiscreteTrihedron"))
+    out_dimtags = gmsh.model.occ.addPipe([(2, disk_tag)], wire_tag, trihedron)
+    dimtags = [(dim, tag) for dim, tag in out_dimtags if dim == 3]
+
+    bbox_origin = _ensure_vec3(
+        (
+            center[0] - (helix_radius + tube_radius),
+            center[1] - (helix_radius + tube_radius),
+            center[2] - 0.5 * height,
+        )
+    )
+    bbox_size = _ensure_vec3(
+        (
+            2.0 * (helix_radius + tube_radius),
+            2.0 * (helix_radius + tube_radius),
+            height,
+        )
+    )
+    bbox = BoundingBox(origin=bbox_origin, size=bbox_size)
+    ctx.register_element(element, dimtags, bbox=bbox)
+    return dimtags
+
 def _ensure_vec3(values: Iterable[float]) -> Vec3:
     seq = tuple(float(v) for v in values)
     if len(seq) != 3:
@@ -328,3 +425,4 @@ __all__ = [
     "BoundingBox",
     "_collect_points_from_dimtags",
 ]
+
