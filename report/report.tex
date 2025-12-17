@@ -1,0 +1,255 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\title{Thermal Twin (TES Digital Twin):\
+Transfer of Knowledge Report}
+\author{Project Summary for Handover - Alexandros Kinanis}
+\date{\today}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+}
+
+\begin{document}
+\maketitle
+
+\section*{Executive Summary}
+Thermal Twin is a configurable, scenario-driven thermal simulation framework designed to predict transient temperature evolution in composite heated assemblies (geopolymer blocks, heaters, bedding/contact media, and insulation layers). The pipeline couples:
+(1) parametric CAD construction and meshing using \texttt{gmsh},
+(2) transient heat diffusion solving using FiPy (finite volume method on unstructured tetrahedra), and
+(3) telemetry/probe extraction and plotting for direct comparison to experimental measurements.
+
+The system is intentionally modular. A user defines a physical test article using a \textbf{geometry JSON} (volumes and regions) and a \textbf{scenario YAML} (heater schedule, boundary conditions, probes, mesh sizes). Temperature-dependent material properties are provided in \texttt{materials.json}. This allows rapid iteration across experimental configurations (single block, multi-block stacks, different insulation levels) without changing solver code.
+
+\section{Repository Overview}
+\subsection{High-level structure}
+Key directories:
+\begin{itemize}
+  \item \texttt{src/thermal\_twin/}: installable package.
+  \item \texttt{configs/geometry/}: geometry JSON definitions (blocks, shells, heaters, gaps, pilot scheme).
+  \item \texttt{configs/scenarios/}: scenario YAML definitions for meshing/simulation.
+  \item \texttt{materials.json}: temperature-dependent material catalog.
+  \item \texttt{outputs/}: meshes and run telemetry (ignored by git).
+  \item \texttt{scripts/}: utilities for mesh visualization.
+\end{itemize}
+
+Core modules:
+\begin{itemize}
+  \item \textbf{Geometry}: \texttt{src/thermal\_twin/geometry/elements.py} defines element types and their gmsh OCC builders (block, cylinder, shell, plus a helical pipe sweep for the pilot).
+  \item \textbf{Meshing}: \texttt{src/thermal\_twin/meshing/builder.py} builds the gmsh model, fragments volumes, registers physical groups, applies mesh sizing, and exports \texttt{.msh}/\texttt{.vtu}.
+  \item \textbf{Solver}: \texttt{src/thermal\_twin/solver/core.py} loads the mesh into FiPy, assembles material fields, applies heater and boundary conditions, advances time, and streams telemetry.
+  \item \textbf{Scenarios/CLI}: \texttt{src/thermal\_twin/scenarios/schema.py}, \texttt{src/thermal\_twin/scenarios/runner.py}, \texttt{src/thermal\_twin/cli.py} provide the configuration schema and runnable commands.
+  \item \textbf{Analysis}: \texttt{src/thermal\_twin/analysis/plot\_telemetry.py} plots NDJSON telemetry into standard time-series charts.
+\end{itemize}
+
+\subsection{Design rationale}
+The project uses configuration files rather than hard-coded geometries to support:
+\begin{enumerate}
+  \item fast iteration (geometry changes do not require solver edits),
+  \item systematic calibration (loss coefficients and contact/bedding properties can be tuned),
+  \item reproducibility (a scenario file fully captures assumptions and run settings).
+\end{enumerate}
+
+\section{Physics Model}
+\subsection{Governing equation (transient heat diffusion)}
+In each solid region, temperature evolves according to:
+\begin{equation}
+\rho c_p \frac{\partial T}{\partial t} = \nabla \cdot (k\nabla T) + q,
+\end{equation}
+where $T$ is temperature, $\rho$ density, $c_p$ specific heat, $k$ thermal conductivity, and $q$ volumetric heat generation.
+
+In current configurations, the heater is imposed as a \textbf{Dirichlet temperature constraint} (so $q=0$), which is appropriate when heater surface temperature is known/controlled or will be measured directly in future hardware.
+
+\subsection{Heater model (Dirichlet ramp schedule)}
+For heater cells/volumes:
+\begin{equation}
+T = T_h(t),
+\end{equation}
+with a linear ramp:
+\begin{equation}
+T_h(t) =
+\begin{cases}
+T_\infty + (T_{\max} - T_\infty)\, t/t_{\mathrm{ramp}}, & t < t_{\mathrm{ramp}},\\
+T_{\max}, & t \ge t_{\mathrm{ramp}}.
+\end{cases}
+\end{equation}
+Here $T_\infty$ is ambient temperature, $T_{\max}$ the target heater setpoint, and $t_{\mathrm{ramp}}$ the ramp time.
+
+\paragraph{Heater efficiency (concept).}
+In practical systems, not all electrical power reaches the block (lead losses, fixture losses, imperfect coupling, radiative losses, etc.). A simple and robust way to capture this when only heater temperature is prescribed is to introduce an efficiency factor $\eta_h\in(0,1]$ such that:
+\begin{equation}
+T_{\max,\mathrm{eff}} = \eta_h\,T_{\max}.
+\end{equation}
+This is a calibration knob; it should be used cautiously and ideally replaced by measured heater temperature telemetry (future plan).
+
+\subsection{Boundary heat losses (convection + radiation as Robin BC)}
+Exposed faces exchange heat with ambient via convection and radiation. In the solver, this is modeled as a Robin boundary:
+\begin{equation}
+- k_{\mathrm{face}}\,\mathbf{n}\cdot\nabla T = h\,(T - T_\infty) + h_{\mathrm{rad}}\,(T - T_\infty),
+\end{equation}
+where $h$ is convective heat transfer coefficient, and $h_{\mathrm{rad}}$ is a linearized radiation coefficient:
+\begin{equation}
+h_{\mathrm{rad}} = 4\sigma\varepsilon T_\infty^3,
+\end{equation}
+with emissivity $\varepsilon$ and Stefan--Boltzmann constant $\sigma$. The effective loss coefficient is:
+\begin{equation}
+h_{\mathrm{eff}} = h + h_{\mathrm{rad}}.
+\end{equation}
+
+In implementation, each boundary face contributes an implicit sink term to adjacent cells, scaled by face area and cell volume.
+
+\subsection{Imperfect contact between blocks (gap modeling)}
+When assemblies are not perfectly monolithic, thermal resistance at joints can dominate transient response. Thermal Twin supports a practical, mesh-based representation:
+\begin{itemize}
+  \item Insert \textbf{thin low-$k$ volumes} between blocks (e.g., \texttt{air\_gap}) to emulate imperfect contact.
+  \item This avoids specialized contact conductance models while remaining configurable and calibratable.
+\end{itemize}
+This approach is effective when contact is partial (touching at points but with voids), and when the detailed micro-contact physics are unknown.
+
+\section{Numerical Method and Implementation}
+\subsection{Discretization and solver}
+The PDE is discretized using FiPy finite volumes on unstructured tetrahedra. The time integration uses an implicit transient term with a diffusion term:
+\begin{equation}
+\texttt{TransientTerm}(\rho c_p) = \texttt{DiffusionTerm}(k) + \text{boundary sinks}.
+\end{equation}
+Implicit time stepping improves stability for stiff diffusion systems and strongly varying material properties.
+
+\subsection{Mesh generation}
+Geometries are built in gmsh using OpenCASCADE primitives and boolean fragmentation to ensure non-overlapping volumes. Each region is assigned a physical group for:
+\begin{itemize}
+  \item volumetric material assignment (3D physical groups),
+  \item boundary-face extraction for Robin BC application (2D physical faces).
+\end{itemize}
+Mesh sizing is controlled by scenario fields (global element size, heater refinement). Mesh quality is evaluated using gmsh element quality metrics.
+
+\subsection{Stability safeguards}
+Unstructured meshes can contain degenerate distances that cause divisions by zero in FiPy. The solver clamps near-zero cell distances early (distance floor) to prevent numerical blow-up.
+
+\section{Configuration System (How Users Define New Systems)}
+\subsection{Materials: \texttt{materials.json}}
+Materials are defined with temperature-dependent arrays:
+\begin{itemize}
+  \item \texttt{T}: temperature samples (\si{\celsius}),
+  \item \texttt{rho}, \texttt{cp}, and either \texttt{k} or \texttt{alpha} (if only diffusivity is known).
+\end{itemize}
+The solver interpolates properties at runtime using linear interpolation.
+
+\subsection{Geometry JSON}
+A geometry file defines named elements with types such as:
+\begin{itemize}
+  \item \texttt{block}: axis-aligned box,
+  \item \texttt{cylinder}: heater rods / bedding volumes,
+  \item \texttt{shell}: insulation layers wrapping targets,
+  \item \texttt{helix\_pipe}: swept helical pipe (pilot scheme).
+\end{itemize}
+Each element may assign a \texttt{material} (maps to \texttt{materials.json}).
+
+\subsection{Scenario YAML}
+A scenario binds geometry to physics and runtime:
+\begin{itemize}
+  \item mesh controls (global size, refinement, optional min quality),
+  \item heater schedule (setpoint, ramp time, optional turn-off),
+  \item boundary conditions (region name, convection/radiation parameters, optional face filtering),
+  \item measurement probes (positions),
+  \item solver runtime settings (dt, total time).
+\end{itemize}
+This design allows end users to define new assemblies without code changes.
+
+\section{How to Run the Codebase}
+\subsection{Environment setup (Windows)}
+From repository root:
+\begin{lstlisting}
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e .
+\end{lstlisting}
+
+\subsection{Mesh build and preview}
+Generate mesh from a scenario (exports \texttt{.msh} and a preview \texttt{.vtu}):
+\begin{lstlisting}
+.\.venv\Scripts\python -m thermal_twin.cli mesh build <scenario.yml> --preview outputs/meshes/<name>.vtu
+\end{lstlisting}
+
+\subsection{Run a simulation with telemetry and live plot}
+\begin{lstlisting}
+.\.venv\Scripts\python -m thermal_twin.cli simulate <scenario.yml> \
+  --live-plot --keep-live-plot-open \
+  --telemetry-log outputs/runs/<run>.ndjson \
+  --output outputs/runs/<run>.json
+\end{lstlisting}
+
+\subsection{Plot telemetry after the run}
+\begin{lstlisting}
+.\.venv\Scripts\python -m thermal_twin.analysis.plot_telemetry outputs/runs/<run>.ndjson --save report/plot.png
+\end{lstlisting}
+
+\section{Results (Current Baselines)}
+This section summarizes the current validation baselines used for calibration and handover.
+
+\subsection{Single insulated block: 700\,$^{\circ}$C case}
+Figure~\ref{fig:single_geom} shows the single-block geometry. Figure~\ref{fig:single_results} shows the simulated probe temperature response for a 700\,$^{\circ}$C target.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.75\textwidth]{single_block.png}
+  \caption{Single block geometry visualization (insulated assembly with heater rod and bedding).}
+  \label{fig:single_geom}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.85\textwidth]{single_block_1L_700_results.png}
+  \caption{Single block (1L) simulated temperature response for the 700\,$^{\circ}$C target.}
+  \label{fig:single_results}
+\end{figure}
+
+\subsection{Four-block naked stack: 600\,$^{\circ}$C case}
+Figure~\ref{fig:four_geom} shows the four-block geometry with internal gaps. Figure~\ref{fig:four_results} shows the simulated response for a 600\,$^{\circ}$C target without insulation.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{4_blocks.png}
+  \caption{Four-block naked assembly geometry visualization. The internal planes indicate low-$k$ contact layers used to emulate imperfect block-to-block coupling.}
+  \label{fig:four_geom}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.85\textwidth]{4_blocks_naked_no_insulation_results.png}
+  \caption{Four-block naked simulated probe response for a 600\,$^{\circ}$C heater target. Heater efficiency was not aggressively tuned due to unknown loss physics; calibration is expected after pilot measurements.}
+  \label{fig:four_results}
+\end{figure}
+
+\subsection{Pilot scheme (next step)}
+Figure~\ref{fig:pilot} shows the planned pilot configuration: a 3$\times$3 stack of long block arrays, with a central block containing a helical stainless pipe and the entire assembly wrapped in rockwool insulation. This geometry exists to support the next experimental phase, where measured data will enable calibration of contact losses, insulation performance, and heater efficiency.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{pilot_scheme.png}
+  \caption{Pilot scheme geometry diagram (3$\times$3 stack, separator geopolymer layers, central helical pipe, rockwool shell).}
+  \label{fig:pilot}
+\end{figure}
+
+\section{Applicability and Future Extensions}
+Thermal Twin is applicable to any assembly that can be approximated as piecewise-homogeneous solids with known or calibratable boundary losses. The strongest use case is experimental replication and parameter calibration:
+\begin{itemize}
+  \item Calibrate $h$ and $\varepsilon$ to match observed heating/cooling.
+  \item Calibrate bedding $k$ and contact gap parameters to match ramp dynamics.
+  \item Replace prescribed heater schedule with measured heater telemetry in future hardware.
+\end{itemize}
+
+Planned upgrades include nonlinear radiation (full $\sigma\varepsilon(T^4 - T_\infty^4)$), explicit thermal contact resistance models, and optimization-based fitting to experimental datasets.
+
+\end{document}
