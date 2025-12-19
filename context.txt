@@ -1,0 +1,69 @@
+﻿Digital Twin 2.0 – Context for Next Agent
+========================================
+
+Scope
+- Transient heat diffusion simulator for geopolymer/heater assemblies using FiPy (finite volumes) on gmsh-generated tetrahedral meshes.
+- Config-driven: geometry in JSON, scenarios in YAML, materials in materials.json (temperature-dependent). No hard-coded geometry in solver.
+
+Core Code Paths
+- Geometry builders: src/thermal_twin/geometry/elements.py
+  * Primitives: block, cylinder, shell, helix_pipe (sweeps a disk along a spline helix; used for stainless spiral in pilot).
+  * Bounding boxes stored for boundary filtering; materials mapped per element.
+- Meshing: src/thermal_twin/meshing/builder.py
+  * Builds OCC model, fragments volumes, sets physical groups, applies mesh size, exports .msh/.vtu. Quality check min_quality (default 0.1; configurable via scenarios.schema MeshControls.min_quality).
+  * Priority order: heater (300) > bedding (250) > pipe (240) > air_gap (230) > block (200) > container (50) > others (100).
+  * Refinement applied to cylinders/helix_pipe and roles heater/pipe.
+- Solver: src/thermal_twin/solver/core.py
+  * Loads mesh (meshio->FiPy Gmsh3D), floors near-zero distances to 1e-4 to avoid divide-by-zero.
+  * Material fields interpolated from materials.json (rho, cp, k or alpha).
+  * Heater: Dirichlet ramp to max_temperature_c over ramp_seconds (optionally efficiency conceptually by lowering setpoint; not yet a dedicated field).
+  * Boundaries: Robin convection + linearized radiation (h_total = h + 4*sigma*epsilon*T_ambient^3). Face conductivity from adjacent cell. Optional face filters (+x/-x/+y/-y/+z/-z).
+  * Telemetry: NDJSON step events with probe temps; live plot option labels current temperature per series.
+- CLI: src/thermal_twin/cli.py
+  * mesh build/preview, simulate with telemetry/output, live plot.
+- Plotting: src/thermal_twin/analysis/plot_telemetry.py (reads NDJSON -> PNG).
+
+Materials (materials.json)
+- Baseline: dias_geopolymer, nichrome, silica_blanket, brick_powder (lowered k), air_gap (low k for contact layers).
+- Added: geopolymer_uncured (slightly higher k than cured), rockwool, stainless_steel.
+
+Key Geometries/Scenarios
+- configs/geometry/baseline_block.json / baseline_block_1L.json / baseline_block_2L.json
+  * Single block with heater and bedding; 1L shell thickness 1.3 cm, 2L thickness 2.6 cm.
+- configs/scenarios/baseline_1L.yml / baseline_2L.yml
+  * Heater ~550–600 C ramps; convective h=17; optional +z face h=23; probes centered at x=y=5 cm, varying depth.
+- configs/geometry/4_blocks_naked.json and scenario 4_blocks_naked.yml
+  * 10x10x120 cm core with 3 thin internal air-gap slabs (2 mm) and heaters/bedding; no outer insulation; convection h=18.
+- configs/geometry/pilot_scheme.json and scenario pilot_scheme.yml
+  * 3x3 grid of the 4-block arrays unified into a 31x31x120 cm stack; separator slabs (0.5 cm) of geopolymer_uncured between blocks; central block uses a helix_pipe (12 loops, radius 3.5 cm, tube radius 0.6 cm) of stainless_steel; all wrapped in 5 cm rockwool shell. Mesh controls: global_size_mm=20, rod_refinement_mm=4, min_quality=0.08 (required due to complex geometry). Mesh quality result: min≈0.088, mean≈0.691, cells≈1.55M.
+
+Current Outputs/Visuals
+- report/report.pdf + report.tex plus images in report/: single_block*, 4_blocks*, pilot_scheme.png.
+- results/: legacy plots (1L_400/600/700, 4_block_array, pilot_scheme). Note .gitignore excludes outputs/, but results/ is tracked per request.
+- Mesh previews: outputs/meshes/*.vtu/.msh (not tracked due to size).
+
+Known Limitations / Cautions
+- Mesh scaling: coarse global_size reduces runtime but can smear gradients and alter timing; finer mesh raises cell count and stiffness. Internal thin layers (gaps/separators) force refinement; watch quality. Use min_quality override in scenario if geometry demands (pilot uses 0.08).
+- Linearized radiation assumes moderate temperature difference around ambient; for very high T, consider full nonlinear term.
+- Heater modeled as Dirichlet temperature; efficiency must be mimicked by reducing setpoint until measured heater telemetry is available.
+- Contact physics approximated with explicit low-k volumes (air_gap); no explicit thermal contact resistance model.
+- Large geometries (pilot) produce big meshes (~1.5M cells); check memory/time before runs.
+
+How to Rebuild Key Artifacts
+- Mesh build: .\.venv\Scripts\python -m thermal_twin.cli mesh build <scenario.yml> --preview outputs/meshes/<name>.vtu
+- Simulate: .\.venv\Scripts\python -m thermal_twin.cli simulate <scenario.yml> --telemetry-log outputs/runs/<run>.ndjson --output outputs/runs/<run>.json [--live-plot --keep-live-plot-open]
+- Plot NDJSON: .\.venv\Scripts\python -m thermal_twin.analysis.plot_telemetry <run>.ndjson --save <plot>.png
+- Mesh color preview (stable colors): .\.venv\Scripts\python scripts/color_preview.py <mesh>.vtu --png <out>.png --opacity 0.2
+
+Recent Changes of Note
+- Added helix_pipe builder and updated meshing priorities/refinement for pipe/air_gap.
+- Added new materials (geopolymer_uncured, rockwool, stainless_steel) for pilot.
+- Added pilot_scheme geometry/scenario; lowered min_quality to 0.08 to accept min quality ~0.088.
+- Added handover report (report/report.pdf) with visuals and lay summary.
+
+Next Steps / Calibration Guidance
+- Calibrate h/epsilon and bedding/contact k against new experimental telemetry (especially for pilot). If heater telemetry becomes available, switch to measured heater temps instead of pure Dirichlet setpoints.
+- If mesh quality fails for future geometries: thicken thin layers slightly, relax min_quality in scenario, or coarsen global_size while ensuring gradients are resolved near heater and gaps.
+
+Contacts/Transfer
+- Code already on GitHub (main). report/ and results/ now tracked per handover request. Mesh binaries remain in outputs/meshes locally.
